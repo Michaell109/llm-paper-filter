@@ -178,6 +178,11 @@ python main.py --config configs/biology_config.py
 
 ---
 
+## 📄 License
+
+MIT License
+
+
 ## 🤝 贡献与感谢
 
 本项目融合了爬虫工程、异步 IO 与高级 Prompt Engineering (思维链打分)。
