@@ -13,17 +13,21 @@ from .base import SiliconFlowClient, parse_xml_response
 class FineFilter:
     """LLM 筛选器（支持并发）"""
     
-    def __init__(self, config: LLMConfig, prompt_template: str, concurrency: int = 10):
-        """
-        Args:
-            config: LLM 配置
-            prompt_template: 筛选 prompt 模板，包含 {title} 和 {abstract} 占位符
-            concurrency: 并发数
-        """
+    def __init__(self, config: LLMConfig, prompt_template: str = None, concurrency: int = 10):
         self.client = SiliconFlowClient(config)
-        self.prompt_template = prompt_template
         self.system_prompt = "你是一个严谨的学术论文筛选助手。"
         self.concurrency = concurrency
+        
+        if prompt_template:
+            self.prompt_template = prompt_template
+        else:
+            # 如果没有传入 prompt，尝试从文件加载
+            try:
+                from prompt_generator import load_prompt_template
+                self.prompt_template = load_prompt_template("filter_template.txt")
+            except Exception as e:
+                print(f"⚠️ 初始化 FineFilter 失败：{e}")
+                self.prompt_template = ""
     
     def build_prompt(self, title: str, abstract: str) -> str:
         """构建筛选 prompt"""
@@ -94,29 +98,3 @@ class FineFilter:
         
         pbar.close()
         return results
-
-
-# 默认的筛选 prompt 模板
-DEFAULT_FINE_PROMPT = """
-你是一个严谨的科研助手。我会提供一篇论文的标题和摘要，请你判断这篇论文是否与研究主题密切相关。
-
-相关性的判定标准是：论文需要实质性地讨论研究主题，而不仅仅是顺带提到这些词。
-
-请严格按照下面的格式用中文输出，不要添加多余说明：
-
-<is_relevant>
-true 或 false
-</is_relevant>
-
-<reason_zh>
-如果是 true，用一两句话中文解释为什么相关；如果是 false，这一段可以留空。
-</reason_zh>
-
-<abstract_zh>
-如果是 true，请将论文摘要翻译成中文；如果是 false，这一段可以留空。
-</abstract_zh>
-
-论文标题: {title}
-
-论文摘要: {abstract}
-"""

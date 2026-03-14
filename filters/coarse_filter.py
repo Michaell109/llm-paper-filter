@@ -70,19 +70,3 @@ class CoarseFilter:
         
         print(f"   ✅ 初筛完成，保留 {len(results)} 篇论文")
         return results
-
-
-# 默认的初筛 prompt 模板
-DEFAULT_COARSE_PROMPT = """
-You are a research assistant. Determine if this paper is relevant to the research topic.
-
-Title: {title}
-Abstract: {abstract}
-
-Only output strictly in this XML format:
-
-<is_relevant>
-true OR false
-</is_relevant>
-
-"""

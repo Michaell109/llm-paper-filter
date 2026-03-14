@@ -81,9 +81,11 @@ class SiliconFlowClient(BaseLLMClient):
             "top_p": 0.7,
         }
         
+        endpoint = self.config.base_url.rstrip('/') + '/chat/completions'
+        
         try:
             response = requests.post(
-                self.config.base_url,
+                endpoint,
                 json=payload,
                 headers=headers,
                 timeout=120
@@ -122,9 +124,11 @@ class SiliconFlowClient(BaseLLMClient):
             "top_p": 0.7,
         }
         
+        endpoint = self.config.base_url.rstrip('/') + '/chat/completions'
+        
         try:
             async with session.post(
-                self.config.base_url,
+                endpoint,
                 json=payload,
                 headers=headers,
                 timeout=aiohttp.ClientTimeout(total=120)
@@ -133,7 +137,6 @@ class SiliconFlowClient(BaseLLMClient):
                     data = await response.json()
                     return index, data["choices"][0]["message"]["content"]
                 elif response.status == 429:
-                    # 限流，等待后重试
                     await asyncio.sleep(5)
                     return index, None
                 else:
@@ -147,17 +150,6 @@ class SiliconFlowClient(BaseLLMClient):
         system_prompt: str = "",
         concurrency: int = 10
     ) -> List[Optional[str]]:
-        """
-        批量异步调用
-        
-        Args:
-            prompts: prompt 列表
-            system_prompt: 系统 prompt
-            concurrency: 并发数
-        
-        Returns:
-            响应列表（保持顺序）
-        """
         results = [None] * len(prompts)
         semaphore = asyncio.Semaphore(concurrency)
         
@@ -205,6 +197,7 @@ def parse_xml_response(text: str) -> Tuple[bool, str, str]:
     rel_text = extract_tag("is_relevant")
     is_relevant = any(v in rel_text.lower() for v in ['true', '是', 'yes'])
     
+    # 👇 修复点：在这里提前初始化这两个变量
     reason_zh = ""
     abstract_zh = ""
     
@@ -216,5 +209,5 @@ def parse_xml_response(text: str) -> Tuple[bool, str, str]:
         # 截断过长的理由
         if len(reason_zh) > 200:
             reason_zh = reason_zh[:197] + "..."
-    
+            
     return is_relevant, reason_zh, abstract_zh
